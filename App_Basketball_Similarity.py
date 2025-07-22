@@ -16,7 +16,7 @@ import streamlit as st
 # In[13]:
 
 
-per_game = pd.read_csv('/Users/jackewings/Desktop/Practice/Data/NBA_Stats_2025/Player Per Game.csv')
+per_game = pd.read_csv('Player Per Game.csv')
 
 pd.set_option('display.max_columns', None)
 
