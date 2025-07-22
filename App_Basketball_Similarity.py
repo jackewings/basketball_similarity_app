@@ -12,11 +12,9 @@ import streamlit as st
 
 # Load data
 per_game = pd.read_csv('Player Per Game.csv')
-
-# Filter for season 2025
 per_game_25 = per_game[per_game['season'] == 2025]
 
-# Aggregate stats by player_id, taking first player name and mean of stats
+# Aggregate per player
 per_game_25_agg = per_game_25.groupby('player_id').agg({
     'player': 'first',
     'pts_per_game': 'mean',
@@ -26,40 +24,32 @@ per_game_25_agg = per_game_25.groupby('player_id').agg({
     'x3p_percent': 'mean'
 }).reset_index(drop=True)
 
-# Features to use
+# Features for similarity
 features = ['pts_per_game', 'trb_per_game', 'ast_per_game', 'fg_percent', 'x3p_percent']
 
-# Drop rows with missing feature values
-per_game_25_agg = per_game_25_agg.dropna(subset=features).reset_index(drop=True)
-
-# Scale the features
+# Scale features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(per_game_25_agg[features])
 
-# Streamlit app title
-st.title('Player Similarity Tool')
+# Streamlit UI
+st.title('Player Similarity & Comparison Tool')
 
-# Player selectbox (sorted unique names)
-selected_player = st.selectbox('Select a player', per_game_25_agg['player'].sort_values().unique())
+# Select two players
+player_list = per_game_25_agg['player'].tolist()
+player1 = st.selectbox('Select Player 1', player_list, index=0)
+player2 = st.selectbox('Select Player 2', player_list, index=1)
 
-# Find index of selected player
-matching_rows = per_game_25_agg[per_game_25_agg['player'] == selected_player]
-if matching_rows.empty:
-    st.error("Selected player not found in the data.")
-    st.stop()
-idx = matching_rows.index[0]
+# Get indices for players
+idx1 = per_game_25_agg[per_game_25_agg['player'] == player1].index[0]
+idx2 = per_game_25_agg[per_game_25_agg['player'] == player2].index[0]
 
-# Calculate cosine similarities
-similarities = cosine_similarity([X_scaled[idx]], X_scaled)[0]
+# Calculate similarity
+similarity_score = cosine_similarity([X_scaled[idx1]], [X_scaled[idx2]])[0][0]
 
-# Add similarity scores to dataframe
-per_game_25_agg['Similarity'] = similarities
+st.subheader(f'Similarity between {player1} and {player2}: {similarity_score:.3f}')
 
-# Get top 5 most similar players excluding the selected player
-top_similar = per_game_25_agg[per_game_25_agg['player'] != selected_player] \
-                .sort_values(by='Similarity', ascending=False) \
-                .head(5)
+# Show side-by-side stats
+stats_df = per_game_25_agg.loc[[idx1, idx2], ['player'] + features].set_index('player').T
+st.write('### Player Stats Comparison')
+st.dataframe(stats_df.style.format("{:.2f}"))
 
-# Display results
-st.subheader(f'Players most similar to {selected_player}')
-st.dataframe(top_similar[['player', 'Similarity']])
