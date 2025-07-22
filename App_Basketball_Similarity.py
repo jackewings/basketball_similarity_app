@@ -53,7 +53,7 @@ per_game_25_agg['player'].nunique()
 
 
 # In[ ]:
-
+per_game_25_agg = per_game_25_agg.reset_index(drop=True)
 
 scaler = StandardScaler()
 
