@@ -63,7 +63,13 @@ st.title('Player Similarity Tool')
 
 selected_player = st.selectbox('Select a player', per_game_25_agg['player'])
 
-idx = per_game_25_agg[per_game_25_agg['player'] == selected_player].index[0]
+matching_rows = per_game_25_agg[per_game_25_agg['player'] == selected_player]
+
+if matching_rows.empty:
+    st.error("Selected player not found in the data.")
+    st.stop()
+
+idx = matching_rows.index[0]
 
 similarities = cosine_similarity([X_scaled[idx]], X_scaled)[0]
 
